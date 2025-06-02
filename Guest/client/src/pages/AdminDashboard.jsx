@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import axios from "axios";
+import api from "../utils/axios";
 
 const AdminDashboard = () => {
   const [guests, setGuests] = useState([]);
@@ -10,7 +10,7 @@ const AdminDashboard = () => {
   // Function to fetch guests
   const fetchGuests = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/api/guests");
+      const response = await api.get("/guests");
       setGuests(response.data);
       setLoading(false);
     } catch (error) {
@@ -33,7 +33,7 @@ const AdminDashboard = () => {
 
   const handleTimeOut = async (guestId) => {
     try {
-      await axios.put(`http://localhost:3000/api/guests/${guestId}/timeout`);
+      await api.put(`/guests/${guestId}/timeout`);
       toast.success("Time out recorded successfully");
       fetchGuests(); // Fetch immediately after timeout
     } catch (error) {

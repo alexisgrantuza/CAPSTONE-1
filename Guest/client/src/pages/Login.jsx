@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import axios from "axios";
+import api from "../utils/axios";
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
     username: "",
     password: "",
   });
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -20,16 +21,16 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/auth/login",
-        credentials
-      );
+      const response = await api.post("/auth/login", credentials);
       localStorage.setItem("adminToken", response.data.token);
       toast.success("Login successful!");
       navigate("/admin/dashboard");
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -56,6 +57,7 @@ const Login = () => {
                 onChange={handleInputChange}
                 className="input-field rounded-t-md"
                 placeholder="Username"
+                disabled={loading}
               />
             </div>
             <div>
@@ -71,13 +73,18 @@ const Login = () => {
                 onChange={handleInputChange}
                 className="input-field rounded-b-md"
                 placeholder="Password"
+                disabled={loading}
               />
             </div>
           </div>
 
           <div>
-            <button type="submit" className="btn-primary w-full">
-              Sign in
+            <button
+              type="submit"
+              className="btn-primary w-full"
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </div>
         </form>
