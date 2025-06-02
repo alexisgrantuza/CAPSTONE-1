@@ -7,10 +7,7 @@ const AdminDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchGuests();
-  }, []);
-
+  // Function to fetch guests
   const fetchGuests = async () => {
     try {
       const response = await axios.get("http://localhost:3000/api/guests");
@@ -23,11 +20,22 @@ const AdminDashboard = () => {
     }
   };
 
+  // Initial fetch and setup polling
+  useEffect(() => {
+    fetchGuests();
+
+    // Set up polling every 3 seconds
+    const pollInterval = setInterval(fetchGuests, 3000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(pollInterval);
+  }, []);
+
   const handleTimeOut = async (guestId) => {
     try {
       await axios.put(`http://localhost:3000/api/guests/${guestId}/timeout`);
       toast.success("Time out recorded successfully");
-      fetchGuests();
+      fetchGuests(); // Fetch immediately after timeout
     } catch (error) {
       toast.error("Error recording time out");
       console.error("Error:", error);
@@ -40,7 +48,7 @@ const AdminDashboard = () => {
       guest.fullName.toLowerCase().includes(searchLower) ||
       guest.gender.toLowerCase().includes(searchLower) ||
       guest.age.toString().includes(searchLower) ||
-      guest.timeIn.toLowerCase().includes(searchLower)
+      (guest.timeIn && guest.timeIn.toLowerCase().includes(searchLower))
     );
   });
 
@@ -55,9 +63,9 @@ const AdminDashboard = () => {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="bg-white shadow rounded-lg p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          Guest Management
-        </h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Guest Management</h1>
+        </div>
 
         <div className="mb-6">
           <input
@@ -106,7 +114,9 @@ const AdminDashboard = () => {
                     {guest.gender}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(guest.timeIn).toLocaleString()}
+                    {guest.timeIn
+                      ? new Date(guest.timeIn).toLocaleString()
+                      : "-"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {guest.timeOut

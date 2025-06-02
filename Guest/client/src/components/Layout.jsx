@@ -19,12 +19,6 @@ const Layout = () => {
                 >
                   QR Generator
                 </Link>
-                <Link
-                  to="/admin"
-                  className="border-transparent text-gray-500 hover:border-primary-500 hover:text-primary-600 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium"
-                >
-                  Admin Dashboard
-                </Link>
               </div>
             </div>
           </div>

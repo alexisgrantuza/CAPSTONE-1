@@ -21,11 +21,13 @@ const Guest = sequelize.define("Guest", {
   },
   timeIn: {
     type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
+    allowNull: true,
+    defaultValue: null,
   },
   timeOut: {
     type: DataTypes.DATE,
     allowNull: true,
+    defaultValue: null,
   },
 });
 
