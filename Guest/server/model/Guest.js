@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
+const TimeRecord = require("./TimeRecord");
 
 const Guest = sequelize.define("Guest", {
   id: {
@@ -30,5 +31,9 @@ const Guest = sequelize.define("Guest", {
     defaultValue: null,
   },
 });
+
+// Define the relationship
+Guest.hasMany(TimeRecord, { foreignKey: "guestId" });
+TimeRecord.belongsTo(Guest, { foreignKey: "guestId" });
 
 module.exports = Guest;

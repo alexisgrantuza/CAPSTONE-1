@@ -8,6 +8,7 @@ const authRoutes = require("./routes/authRoutes");
 const authController = require("./controllers/authController");
 const auth = require("./middleware/auth");
 const Guest = require("./model/Guest");
+const TimeRecord = require("./model/TimeRecord");
 
 const app = express();
 
@@ -128,50 +129,23 @@ async function handleQRScan(data) {
 
     const [, id, name, age, gender] = match;
 
-    // Find the guest in the database
-    const guest = await Guest.findByPk(id);
-    if (!guest) {
-      console.error("❌ Guest not found in database");
+    // Make a request to the scan endpoint
+    const response = await fetch("http://localhost:3000/api/guests/scan", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id, name, age, gender }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error(`❌ Error: ${result.message}`);
       return;
     }
 
-    // Verify the guest details match
-    if (
-      guest.fullName !== name ||
-      guest.age.toString() !== age ||
-      guest.gender !== gender
-    ) {
-      console.error("❌ Guest details do not match");
-      return;
-    }
-
-    // Check if guest already has time-in
-    if (guest.timeIn) {
-      // If guest has time-in but no time-out, record time-out
-      if (!guest.timeOut) {
-        guest.timeOut = new Date();
-        await guest.save();
-        console.log("✅ Time-out recorded successfully!");
-        console.log("Guest details:", {
-          id: guest.id,
-          fullName: guest.fullName,
-          timeIn: guest.timeIn,
-          timeOut: guest.timeOut,
-        });
-      } else {
-        console.log("ℹ️  Time-out already recorded for this guest");
-      }
-    } else {
-      // Record time-in if not already recorded
-      guest.timeIn = new Date();
-      await guest.save();
-      console.log("✅ Time-in recorded successfully!");
-      console.log("Guest details:", {
-        id: guest.id,
-        fullName: guest.fullName,
-        timeIn: guest.timeIn,
-      });
-    }
+    console.log(`✅ ${result.message}`);
   } catch (error) {
     console.error("❌ Error processing scan:", error.message);
   }
