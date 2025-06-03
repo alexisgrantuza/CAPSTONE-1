@@ -5,10 +5,12 @@ const { ReadlineParser } = require("@serialport/parser-readline");
 const sequelize = require("./config/database");
 const guestRoutes = require("./routes/guestRoutes");
 const authRoutes = require("./routes/authRoutes");
+const roomRoutes = require("./routes/roomRoutes");
 const authController = require("./controllers/authController");
 const auth = require("./middleware/auth");
 const Guest = require("./model/Guest");
 const TimeRecord = require("./model/TimeRecord");
+const Room = require("./model/Room");
 
 const app = express();
 
@@ -19,6 +21,7 @@ app.use(express.json());
 // Routes
 app.use("/api/guests", guestRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/rooms", roomRoutes);
 
 // Serial Port Setup
 let port = null;

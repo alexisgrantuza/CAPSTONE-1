@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import api from "../utils/axios";
-
+import Sidebar from "../components/Sidebar";
 const AdminDashboard = () => {
   const [guests, setGuests] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -80,8 +80,9 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="bg-white shadow rounded-lg p-6">
+    <div className="h-screen w-full mx-auto flex">
+      <Sidebar />
+      <div className="bg-white shadow rounded-lg p-6 flex-1">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Guest Management</h1>
         </div>
