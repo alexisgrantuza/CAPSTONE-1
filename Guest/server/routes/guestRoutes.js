@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Guest = require("../model/Guest");
 const TimeRecord = require("../model/TimeRecord");
+const Room = require("../model/Room");
 const auth = require("../middleware/auth");
 
 // Get all guests with their time records
@@ -24,7 +25,22 @@ router.get("/", auth, async (req, res) => {
 // Create a new guest
 router.post("/", async (req, res) => {
   try {
-    const guest = await Guest.create(req.body);
+    const { fullName, age, gender, roomCode } = req.body;
+
+    // Find the room by code
+    const room = await Room.findOne({ where: { code: roomCode } });
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    // Create guest with room association
+    const guest = await Guest.create({
+      fullName,
+      age,
+      gender,
+      roomId: room.id,
+    });
+
     res.status(201).json(guest);
   } catch (error) {
     res.status(400).json({ message: error.message });
