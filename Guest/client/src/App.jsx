@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoomEntry from "./pages/RoomEntry";
+import Room from "./pages/Room";
 
 function App() {
   return (
@@ -17,7 +18,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<RoomEntry />} />
-          <Route path="room/:code" element={<QRGenerator />} />
+          <Route path="room/:roomCode" element={<Room />} />
           <Route path="admin" element={<Login />} />
           <Route
             path="admin/dashboard"
