@@ -1,14 +1,24 @@
 const Guest = require("../model/Guest");
+const Room = require("../model/Room");
 
 exports.createGuest = async (req, res) => {
   try {
-    // Create guest without timeIn
+    const { fullName, age, gender, roomCode } = req.body;
+
+    // Find the room by code
+    const room = await Room.findOne({ where: { code: roomCode } });
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    // Create guest with room association
     const guestData = {
-      fullName: req.body.fullName,
-      age: req.body.age,
-      gender: req.body.gender,
+      fullName,
+      age,
+      gender,
       timeIn: null,
       timeOut: null,
+      roomId: room.id,
     };
 
     const guest = await Guest.create(guestData);

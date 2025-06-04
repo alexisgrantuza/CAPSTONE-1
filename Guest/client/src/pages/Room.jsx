@@ -7,6 +7,7 @@ import QRGenerator from "../components/QRGenerator";
 const Room = () => {
   const { roomCode } = useParams();
   const [room, setRoom] = useState(null);
+  const [guests, setGuests] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,6 +15,9 @@ const Room = () => {
       try {
         const response = await api.get(`/rooms/code/${roomCode}`);
         setRoom(response.data);
+        // Fetch guests for this room
+        const guestsResponse = await api.get(`/rooms/code/${roomCode}/guests`);
+        setGuests(guestsResponse.data);
       } catch (error) {
         toast.error("Error fetching room details");
       } finally {
@@ -59,6 +63,36 @@ const Room = () => {
               Room Code: {room.code}
             </span>
           </div>
+        </div>
+
+        {/* Guest List */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            Registered Guests
+          </h2>
+          {guests.length === 0 ? (
+            <p className="text-gray-600">No guests registered yet</p>
+          ) : (
+            <div className="space-y-4">
+              {guests.map((guest, index) => (
+                <div
+                  key={guest.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex items-center space-x-4">
+                    <span className="text-gray-500">{index + 1}.</span>
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {guest.fullName}
+                      </p>
+                      <p className="text-sm text-gray-500">Age: {guest.age}</p>
+                    </div>
+                  </div>
+                  <span className="text-sm text-gray-500">{guest.gender}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* QR Generator */}

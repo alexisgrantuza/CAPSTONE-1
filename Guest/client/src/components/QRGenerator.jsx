@@ -2,8 +2,10 @@ import { useState, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { useParams } from "react-router-dom";
 
 const QRGenerator = () => {
+  const { roomCode } = useParams();
   const [formData, setFormData] = useState({
     fullName: "",
     age: "",
@@ -27,14 +29,22 @@ const QRGenerator = () => {
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/guests",
-        formData
-      );
+      const response = await axios.post("http://localhost:3000/api/guests", {
+        ...formData,
+        roomCode,
+      });
       setQrData(response.data);
       toast.success("QR Code generated successfully!");
+      // Clear the form after successful generation
+      setFormData({
+        fullName: "",
+        age: "",
+        gender: "Male",
+      });
     } catch (error) {
-      toast.error("Error generating QR Code");
+      const errorMessage =
+        error.response?.data?.message || "Error generating QR Code";
+      toast.error(errorMessage);
       console.error("Error:", error);
     }
   };
