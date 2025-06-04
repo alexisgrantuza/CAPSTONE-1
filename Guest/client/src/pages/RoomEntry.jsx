@@ -1,18 +1,32 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import api from "../utils/axios";
 
 const RoomEntry = () => {
   const [roomCode, setRoomCode] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!roomCode.trim()) {
       toast.error("Please enter a room code");
       return;
     }
-    navigate(`/room/${roomCode.toUpperCase()}`);
+
+    setIsLoading(true);
+    try {
+      // Check if room exists
+      const response = await api.get(`/rooms/code/${roomCode.toUpperCase()}`);
+      if (response.data) {
+        navigate(`/room/${roomCode.toUpperCase()}`);
+      }
+    } catch (error) {
+      toast.error("Invalid room code. Please check and try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -39,14 +53,16 @@ const RoomEntry = () => {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter room code"
               maxLength={6}
+              disabled={isLoading}
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
+            disabled={isLoading}
           >
-            Enter Room
+            {isLoading ? "Checking..." : "Enter Room"}
           </button>
         </form>
 
