@@ -29,7 +29,7 @@ const QRGenerator = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:3000/api/guests", {
+      const response = await axios.post("https://capstone-1-2nzg.onrender.com/api/guests", {
         ...formData,
         roomCode,
       });
