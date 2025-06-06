@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const Admin = require("../model/Admin");
 const bcrypt = require("bcryptjs");
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_SECRET = "abcd1234abcd1234";
 
 const authController = {
   login: async (req, res) => {
