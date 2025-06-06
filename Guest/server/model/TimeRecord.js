@@ -15,6 +15,14 @@ const TimeRecord = sequelize.define("TimeRecord", {
       key: "id",
     },
   },
+  roomId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: "Rooms",
+      key: "id",
+    },
+  },
   type: {
     type: DataTypes.ENUM("timeIn", "timeOut"),
     allowNull: false,

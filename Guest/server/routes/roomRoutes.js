@@ -31,4 +31,10 @@ router.get("/code/:code/guests", async (req, res) => {
   }
 });
 
+// Time out all guests in a room
+router.post("/:id/timeout-all", roomController.timeOutAllGuests);
+
+// Get room statistics
+router.get("/:id/stats", roomController.getRoomStats);
+
 module.exports = router;

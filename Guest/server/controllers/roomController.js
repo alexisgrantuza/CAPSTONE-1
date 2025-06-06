@@ -1,4 +1,6 @@
 const Room = require("../model/Room");
+const Guest = require("../model/Guest");
+const TimeRecord = require("../model/TimeRecord");
 
 // Get all rooms
 exports.getAllRooms = async (req, res) => {
@@ -83,5 +85,107 @@ exports.getRoomByCode = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error fetching room", error: error.message });
+  }
+};
+
+exports.timeOutAllGuests = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find guests who have time-in records but no time-out records
+    const guests = await Guest.findAll({
+      where: {
+        roomId: id,
+        timeOut: null,
+      },
+      include: [
+        {
+          model: TimeRecord,
+          where: {
+            type: "timeIn",
+          },
+          required: true,
+        },
+      ],
+    });
+
+    // Create time out records for each guest
+    const timeOutPromises = guests.map((guest) =>
+      TimeRecord.create({
+        guestId: guest.id,
+        roomId: id,
+        type: "timeOut",
+        timestamp: new Date(),
+      })
+    );
+
+    // Update all guests' status
+    const updatePromises = guests.map((guest) =>
+      Guest.update(
+        {
+          timeOut: new Date(),
+          status: "timed_out",
+        },
+        {
+          where: { id: guest.id },
+        }
+      )
+    );
+
+    // Execute all promises
+    await Promise.all([...timeOutPromises, ...updatePromises]);
+
+    res.json({
+      success: true,
+      message: `Successfully timed out ${guests.length} guests`,
+      count: guests.length,
+    });
+  } catch (error) {
+    console.error("Error in timeOutAllGuests:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error timing out guests",
+      error: error.message,
+    });
+  }
+};
+
+exports.getRoomStats = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get total guests in the room
+    const totalGuests = await Guest.count({
+      where: { roomId: id },
+    });
+
+    // Get guests who are timed in
+    const timeInCount = await TimeRecord.count({
+      where: {
+        roomId: id,
+        type: "timeIn",
+      },
+    });
+
+    // Get guests who are timed out
+    const timeOutCount = await TimeRecord.count({
+      where: {
+        roomId: id,
+        type: "timeOut",
+      },
+    });
+
+    res.json({
+      totalGuests,
+      timeInCount,
+      timeOutCount,
+    });
+  } catch (error) {
+    console.error("Error in getRoomStats:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching room statistics",
+      error: error.message,
+    });
   }
 };
