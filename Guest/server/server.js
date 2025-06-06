@@ -17,7 +17,7 @@ const app = express();
 let lastGlobalScanResult = null;
 
 // Middleware
-app.use(cors({ origin: "https://prismatic-faloodeh-811c96.netlify.app" }));
+app.use(cors({ origin: "https://prismatic-faloodeh-811c96.netlify.app/" }));
 app.use(express.json());
 
 // New endpoint to get the last global scan result
