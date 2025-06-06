@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import api from "../utils/axios";
 import Sidebar from "../components/Sidebar";
+
 const AdminDashboard = () => {
   const [guests, setGuests] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,16 +21,40 @@ const AdminDashboard = () => {
     }
   };
 
-  // Initial fetch and setup polling
+  // Initial fetch and setup polling for guest list
   useEffect(() => {
     fetchGuests();
 
-    // Set up polling every 3 seconds
+    // Set up polling every 3 seconds for guest list
     const pollInterval = setInterval(fetchGuests, 3000);
 
     // Cleanup interval on component unmount
     return () => clearInterval(pollInterval);
   }, []);
+
+  // Polling for global scan results
+  useEffect(() => {
+    const scanResultPollInterval = setInterval(async () => {
+      try {
+        const response = await api.get("/last-scan-result");
+        const result = response.data; // Assuming backend returns null if no new result
+
+        if (result) {
+          if (result.status === "error") {
+            toast.error(result.message);
+          } else if (result.status === "success") {
+            toast.success(result.message);
+            fetchGuests(); // Refresh guest list after successful scan
+          }
+        }
+      } catch (error) {
+        console.error("Error polling for scan results:", error);
+        // Optionally show a less intrusive error, or none, to avoid spamming toasts
+      }
+    }, 1000); // Poll every 1 second for faster notification
+
+    return () => clearInterval(scanResultPollInterval);
+  }, []); // Empty dependency array means this effect runs once on mount
 
   const handleTimeOut = async (guestId) => {
     try {

@@ -30,6 +30,12 @@ const RoomView = () => {
   useEffect(() => {
     fetchRoom();
     fetchStats();
+
+    // Set up polling every 3 seconds
+    const pollInterval = setInterval(fetchStats, 3000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(pollInterval);
   }, [id]);
 
   const fetchRoom = async () => {
@@ -68,9 +74,14 @@ const RoomView = () => {
 
     setIsTimeOutLoading(true);
     try {
-      await api.post(`/rooms/${id}/timeout-all`);
-      toast.success("All guests have been timed out successfully");
-      fetchStats(); // Refresh stats after timeout
+      const response = await api.post(`/rooms/${id}/timeout-all`);
+      if (response.data.count === 0) {
+        toast.info("No guests needed to be timed out");
+      } else {
+        toast.success(`Successfully timed out ${response.data.count} guests`);
+      }
+      // Immediately fetch updated stats
+      await fetchStats();
     } catch (error) {
       toast.error(error.response?.data?.message || "Error timing out guests");
     } finally {

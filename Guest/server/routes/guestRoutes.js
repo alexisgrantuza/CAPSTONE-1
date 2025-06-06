@@ -77,6 +77,7 @@ router.post("/scan", async (req, res) => {
     if (!latestRecord || latestRecord.type === "timeOut") {
       await TimeRecord.create({
         guestId: guest.id,
+        roomId: guest.roomId,
         type: "timeIn",
         timestamp: new Date(),
       });
@@ -85,6 +86,7 @@ router.post("/scan", async (req, res) => {
       // If the last record was a time-in, create a time-out
       await TimeRecord.create({
         guestId: guest.id,
+        roomId: guest.roomId,
         type: "timeOut",
         timestamp: new Date(),
       });
@@ -119,12 +121,25 @@ router.put("/:id/timeout", auth, async (req, res) => {
     // Create time-out record
     await TimeRecord.create({
       guestId: guest.id,
+      roomId: guest.roomId,
       type: "timeOut",
       timestamp: new Date(),
     });
 
+    // Update guest's timeOut field
+    await Guest.update(
+      {
+        timeOut: new Date(),
+        status: "timed_out",
+      },
+      {
+        where: { id: guest.id },
+      }
+    );
+
     res.json({ message: "Time out recorded successfully" });
   } catch (error) {
+    console.error("Error in timeout:", error);
     res.status(500).json({ message: error.message });
   }
 });

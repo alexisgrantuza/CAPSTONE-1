@@ -8,15 +8,28 @@ const authRoutes = require("./routes/authRoutes");
 const roomRoutes = require("./routes/roomRoutes");
 const authController = require("./controllers/authController");
 const auth = require("./middleware/auth");
-const Guest = require("./model/Guest");
-const TimeRecord = require("./model/TimeRecord");
-const Room = require("./model/Room");
+const { processQRScan } = require("./controllers/guestController");
+// const Guest = require("./model/Guest"); // No longer needed for roomId lookup here
 
 const app = express();
+
+// In-memory storage for the last global scan result
+let lastGlobalScanResult = null;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// New endpoint to get the last global scan result
+app.get("/api/last-scan-result", (req, res) => {
+  const result = lastGlobalScanResult;
+  if (result) {
+    lastGlobalScanResult = null; // Clear result after retrieval
+    res.json(result);
+  } else {
+    res.json(null); // No new result
+  }
+});
 
 // Routes
 app.use("/api/guests", guestRoutes);
@@ -76,7 +89,10 @@ async function setupSerialPort() {
       if (trimmedData.startsWith("QR_SCAN:")) {
         // Extract the scanned data
         const scannedData = trimmedData.substring(8); // Remove 'QR_SCAN:' prefix
-        await handleQRScan(scannedData);
+        // Process scan data and store result globally
+        const result = await processQRScan(scannedData);
+        lastGlobalScanResult = result; // Store result globally
+        console.log("Stored global scan result:", result);
       } else if (trimmedData === "ARDUINO_READY") {
         console.log("🤖 Arduino is ready!");
       } else if (trimmedData === "USB_READY") {
@@ -105,52 +121,6 @@ async function setupSerialPort() {
     console.log("✅ Successfully connected to Arduino!");
   } catch (error) {
     console.error("❌ Error setting up serial port:", error.message);
-  }
-}
-
-// Handle QR code scan
-async function handleQRScan(data) {
-  const timestamp = new Date().toLocaleString();
-
-  console.log("\n" + "=".repeat(50));
-  console.log("🎯 QR/BARCODE SCANNED!");
-  console.log("=".repeat(50));
-  console.log(`📅 Time: ${timestamp}`);
-  console.log(`📊 Data: ${data}`);
-  console.log(`📏 Length: ${data.length} characters`);
-  console.log("=".repeat(50) + "\n");
-
-  try {
-    // Parse the scanned data
-    const match = data.match(
-      /ID: (\d+), Name: ([^,]+), Age: (\d+), Gender: ([^,]+)/
-    );
-    if (!match) {
-      console.error("❌ Invalid QR code format");
-      return;
-    }
-
-    const [, id, name, age, gender] = match;
-
-    // Make a request to the scan endpoint
-    const response = await fetch("http://localhost:3000/api/guests/scan", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ id, name, age, gender }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error(`❌ Error: ${result.message}`);
-      return;
-    }
-
-    console.log(`✅ ${result.message}`);
-  } catch (error) {
-    console.error("❌ Error processing scan:", error.message);
   }
 }
 
