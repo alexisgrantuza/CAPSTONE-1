@@ -8,28 +8,15 @@ const authRoutes = require("./routes/authRoutes");
 const roomRoutes = require("./routes/roomRoutes");
 const authController = require("./controllers/authController");
 const auth = require("./middleware/auth");
-const { processQRScan } = require("./controllers/guestController");
-// const Guest = require("./model/Guest"); // No longer needed for roomId lookup here
+const Guest = require("./model/Guest");
+const TimeRecord = require("./model/TimeRecord");
+const Room = require("./model/Room");
 
 const app = express();
-
-// In-memory storage for the last global scan result
-let lastGlobalScanResult = null;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// New endpoint to get the last global scan result
-app.get("/api/last-scan-result", (req, res) => {
-  const result = lastGlobalScanResult;
-  if (result) {
-    lastGlobalScanResult = null; // Clear result after retrieval
-    res.json(result);
-  } else {
-    res.json(null); // No new result
-  }
-});
 
 // Routes
 app.use("/api/guests", guestRoutes);
@@ -89,10 +76,7 @@ async function setupSerialPort() {
       if (trimmedData.startsWith("QR_SCAN:")) {
         // Extract the scanned data
         const scannedData = trimmedData.substring(8); // Remove 'QR_SCAN:' prefix
-        // Process scan data and store result globally
-        const result = await processQRScan(scannedData);
-        lastGlobalScanResult = result; // Store result globally
-        console.log("Stored global scan result:", result);
+        await handleQRScan(scannedData);
       } else if (trimmedData === "ARDUINO_READY") {
         console.log("🤖 Arduino is ready!");
       } else if (trimmedData === "USB_READY") {
@@ -124,31 +108,74 @@ async function setupSerialPort() {
   }
 }
 
+// Handle QR code scan
+async function handleQRScan(data) {
+  const timestamp = new Date().toLocaleString();
+
+  console.log("\n" + "=".repeat(50));
+  console.log("🎯 QR/BARCODE SCANNED!");
+  console.log("=".repeat(50));
+  console.log(`📅 Time: ${timestamp}`);
+  console.log(`📊 Data: ${data}`);
+  console.log(`📏 Length: ${data.length} characters`);
+  console.log("=".repeat(50) + "\n");
+
+  try {
+    // Parse the scanned data
+    const match = data.match(
+      /ID: (\d+), Name: ([^,]+), Age: (\d+), Gender: ([^,]+)/
+    );
+    if (!match) {
+      console.error("❌ Invalid QR code format");
+      return;
+    }
+
+    const [, id, name, age, gender] = match;
+
+    // Make a request to the scan endpoint
+    const response = await fetch("http://localhost:3000/api/guests/scan", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id, name, age, gender }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error(`❌ Error: ${result.message}`);
+      return;
+    }
+
+    console.log(`✅ ${result.message}`);
+  } catch (error) {
+    console.error("❌ Error processing scan:", error.message);
+  }
+}
+
 // Protected routes
 app.use("/api/admin/*", auth);
 
 // Database sync and server start
-async function startServer() {
-  try {
-    await sequelize.sync();
-    console.log("Database synced");
-    
-    // Create initial admin user if it doesn't exist
+const PORT = process.env.PORT || 3000;
+
+sequelize
+  .sync()
+  .then(async () => {
+    // Create initial admin user
     await authController.createInitialAdmin();
-    
-    // Start serial port
+
+    // Setup serial port
     await setupSerialPort();
-    
-    const PORT = process.env.PORT || 3000;
+
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
-  } catch (error) {
-    console.error("Error starting server:", error);
-  }
-}
-
-startServer();
+  })
+  .catch((error) => {
+    console.error("Unable to connect to the database:", error);
+  });
 
 // Handle graceful shutdown
 process.on("SIGINT", async () => {
