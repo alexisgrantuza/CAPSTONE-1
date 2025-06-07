@@ -128,24 +128,27 @@ async function setupSerialPort() {
 app.use("/api/admin/*", auth);
 
 // Database sync and server start
-const PORT = process.env.PORT || 3000;
-
-sequelize
-  .sync()
-  .then(async () => {
-    // Create initial admin user
+async function startServer() {
+  try {
+    await sequelize.sync();
+    console.log("Database synced");
+    
+    // Create initial admin user if it doesn't exist
     await authController.createInitialAdmin();
-
-    // Setup serial port
+    
+    // Start serial port
     await setupSerialPort();
-
+    
+    const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
-  })
-  .catch((error) => {
-    console.error("Unable to connect to the database:", error);
-  });
+  } catch (error) {
+    console.error("Error starting server:", error);
+  }
+}
+
+startServer();
 
 // Handle graceful shutdown
 process.on("SIGINT", async () => {

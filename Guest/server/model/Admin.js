@@ -20,9 +20,7 @@ const Admin = sequelize.define("Admin", {
 });
 
 // Hash password before saving
-Admin.beforeCreate(async (admin) => {
-  admin.password = await bcrypt.hash(admin.password, 10);
-});
+
 
 // Method to check password
 Admin.prototype.checkPassword = async function (password) {

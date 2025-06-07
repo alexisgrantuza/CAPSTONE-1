@@ -2,22 +2,29 @@ const jwt = require("jsonwebtoken");
 const Admin = require("../model/Admin");
 const bcrypt = require("bcryptjs");
 
-const JWT_SECRET = "abcd1234abcd1234";
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 const authController = {
   login: async (req, res) => {
     try {
       const { username, password } = req.body;
+      console.log("Login attempt for username:", username);
 
       // Find admin by username
       const admin = await Admin.findOne({ where: { username } });
+      console.log("Admin found:", admin ? "Yes" : "No");
+
       if (!admin) {
+        console.log("No admin found with username:", username);
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       // Verify password
       const isValidPassword = await bcrypt.compare(password, admin.password);
+      console.log("Password valid:", isValidPassword);
+
       if (!isValidPassword) {
+        console.log("Invalid password for username:", username);
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
@@ -26,6 +33,7 @@ const authController = {
         expiresIn: "24h",
       });
 
+      console.log("Login successful for username:", username);
       res.json({ token });
     } catch (error) {
       console.error("Login error:", error);
@@ -48,6 +56,7 @@ const authController = {
       // Check if admin already exists
       const adminExists = await Admin.findOne();
       if (adminExists) {
+        console.log("Admin already exists, skipping creation");
         return;
       }
 
