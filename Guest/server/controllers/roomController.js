@@ -61,17 +61,38 @@ exports.createRoom = async (req, res) => {
 // Delete a room
 exports.deleteRoom = async (req, res) => {
   try {
-    const room = await Room.findByPk(req.params.id);
+    const roomId = req.params.id;
+
+    // Find the room first
+    const room = await Room.findByPk(roomId);
     if (!room) {
       return res.status(404).json({ message: "Room not found" });
     }
 
+    // Delete all associated time records first
+    await TimeRecord.destroy({
+      where: { roomId },
+    });
+
+    // Delete all associated guests
+    await Guest.destroy({
+      where: { roomId },
+    });
+
+    // Finally delete the room
     await room.destroy();
-    res.json({ message: "Room deleted successfully" });
+
+    res.json({
+      success: true,
+      message: "Room and all associated records deleted successfully",
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error deleting room", error: error.message });
+    console.error("Error deleting room:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error deleting room",
+      error: error.message,
+    });
   }
 };
 
@@ -150,11 +171,11 @@ exports.timeOutAllGuests = async (req, res) => {
           guestId,
           type: "timeOut",
           timestamp: {
-            [Op.gte]: new Date(currentTime - 24 * 60 * 60 * 1000) // Last 24 hours
-          }
+            [Op.gte]: new Date(currentTime - 24 * 60 * 60 * 1000), // Last 24 hours
+          },
         },
         order: [["timestamp", "DESC"]],
-        limit: 1
+        limit: 1,
       });
 
       if (!recentTimeout) {
@@ -162,7 +183,7 @@ exports.timeOutAllGuests = async (req, res) => {
           guestId,
           roomId: id,
           type: "timeOut",
-          timestamp: currentTime
+          timestamp: currentTime,
         });
       }
     }
