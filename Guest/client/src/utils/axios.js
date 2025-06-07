@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://capstone-1-2nzg.onrender.com/api",
+  baseURL: "http://localhost:3000/api",
 });
 
 // Request interceptor
